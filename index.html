@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RECLAIM — A Webtoon</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;600;700&family=Noto+Serif:ital,wght@0,400;0,700;1,400&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --gold: #D4A843;
+    --gold-glow: #F5D778;
+    --dark: #0D0D0D;
+    --darker: #060606;
+    --gray: #1A1A1A;
+    --text: #E8E0D4;
+    --text-dim: #8A8278;
+    --accent: #C4953A;
+  }
+
+  body {
+    background: var(--darker);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+  }
+
+  /* ===== LANDING SCREEN ===== */
+  #landing {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center bottom, #1a1208 0%, var(--darker) 70%);
+    text-align: center;
+    padding: 2rem;
+  }
+
+  #landing h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(4rem, 12vw, 10rem);
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-shadow: 0 0 60px rgba(212, 168, 67, 0.3), 0 0 120px rgba(212, 168, 67, 0.1);
+    margin-bottom: 0.5rem;
+    animation: titlePulse 3s ease-in-out infinite;
+  }
+
+  @keyframes titlePulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(212, 168, 67, 0.3), 0 0 120px rgba(212, 168, 67, 0.1); }
+    50% { text-shadow: 0 0 80px rgba(212, 168, 67, 0.5), 0 0 160px rgba(212, 168, 67, 0.2); }
+  }
+
+  #landing .tagline {
+    font-family: 'Noto Serif', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    color: var(--text-dim);
+    margin-bottom: 3rem;
+    max-width: 500px;
+  }
+
+  .episode-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+    max-width: 400px;
+  }
+
+  .episode-btn {
+    background: linear-gradient(135deg, var(--gray) 0%, #111 100%);
+    border: 1px solid rgba(212, 168, 67, 0.2);
+    border-radius: 12px;
+    padding: 1.2rem 1.5rem;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .episode-btn:hover {
+    border-color: var(--gold);
+    background: linear-gradient(135deg, #1a1508 0%, #111 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(212, 168, 67, 0.15);
+  }
+
+  .episode-btn .ep-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    color: var(--gold);
+    min-width: 50px;
+  }
+
+  .episode-btn .ep-info h3 {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .episode-btn .ep-info p {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  .episode-btn.locked {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+
+  /* ===== READER VIEW ===== */
+  #reader {
+    display: none;
+    min-height: 100vh;
+    background: var(--dark);
+  }
+
+  .reader-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: linear-gradient(180deg, var(--darker) 0%, transparent 100%);
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: opacity 0.3s;
+  }
+
+  .reader-header.hidden { opacity: 0; pointer-events: none; }
+
+  .back-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: var(--text);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .back-btn:hover { background: rgba(255,255,255,0.2); }
+
+  .reader-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+
+  .panel-counter {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+  }
+
+  /* ===== PANELS ===== */
+  .panels-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 60px 0 100px;
+  }
+
+  .panel {
+    width: 100%;
+    margin-bottom: 0;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .panel.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .panel img {
+    width: 100%;
+    display: block;
+  }
+
+  /* Text panels for dialogue-heavy scenes */
+  .panel-text {
+    padding: 2rem clamp(1.5rem, 5vw, 4rem);
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+  }
+
+  .panel-text.dark-bg { background: var(--darker); }
+  .panel-text.warm-bg { background: linear-gradient(180deg, #1a1508 0%, var(--darker) 100%); }
+  .panel-text.dramatic { background: linear-gradient(180deg, #0a0a0a 0%, #1a0a00 50%, #0a0a0a 100%); }
+
+  .narration {
+    font-family: 'Noto Serif', serif;
+    font-style: italic;
+    font-size: clamp(1rem, 3vw, 1.3rem);
+    line-height: 1.8;
+    color: var(--text-dim);
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  .narration em { color: var(--gold); font-style: italic; }
+
+  .dialogue {
+    font-family: 'Inter', sans-serif;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    line-height: 1.8;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .dialogue .speaker {
+    font-weight: 700;
+    color: var(--gold);
+    text-transform: uppercase;
+    font-size: 0.8em;
+    letter-spacing: 0.1em;
+    margin-top: 1.2rem;
+  }
+
+  .dialogue .speaker:first-child { margin-top: 0; }
+  .dialogue .line { color: var(--text); margin-top: 0.3rem; }
+
+  /* Splash text overlay */
+  .panel-splash {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .panel-splash .overlay-text {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 3rem 2rem 2rem;
+    background: linear-gradient(transparent 0%, rgba(0,0,0,0.85) 100%);
+  }
+
+  .panel-splash .overlay-text .narration {
+    color: #fff;
+    text-shadow: 0 2px 20px rgba(0,0,0,0.8);
+  }
+
+  /* Chapter title cards */
+  .chapter-card {
+    min-height: 60vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(ellipse at center, #1a1508 0%, var(--darker) 70%);
+    text-align: center;
+    padding: 3rem;
+  }
+
+  .chapter-card .ep-number {
+    font-family: 'Inter', sans-serif;
+    font-weight: 300;
+    font-size: 0.9rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  .chapter-card h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(3rem, 10vw, 6rem);
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-shadow: 0 0 40px rgba(212, 168, 67, 0.3);
+    margin-bottom: 1.5rem;
+  }
+
+  .chapter-card .epigraph {
+    font-family: 'Noto Serif', serif;
+    font-style: italic;
+    font-size: clamp(0.9rem, 2.5vw, 1.1rem);
+    color: var(--text-dim);
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* End card */
+  .end-card {
+    min-height: 40vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 3rem;
+    background: var(--darker);
+  }
+
+  .end-card h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--text-dim);
+    letter-spacing: 0.15em;
+    margin-bottom: 1rem;
+  }
+
+  .end-card .next-title {
+    font-family: 'Noto Serif', serif;
+    font-style: italic;
+    color: var(--gold);
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  .next-ep-btn {
+    background: linear-gradient(135deg, var(--gold) 0%, var(--accent) 100%);
+    border: none;
+    color: var(--darker);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 0.15em;
+    padding: 0.8rem 2.5rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+
+  .next-ep-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(212, 168, 67, 0.3);
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gold), var(--gold-glow));
+    z-index: 100;
+    transition: width 0.1s linear;
+    box-shadow: 0 0 10px rgba(212, 168, 67, 0.5);
+  }
+
+  /* Placeholder for missing images */
+  .panel-placeholder {
+    width: 100%;
+    aspect-ratio: 9/16;
+    background: linear-gradient(135deg, var(--gray) 0%, #111 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 1rem;
+    border: 1px dashed rgba(212, 168, 67, 0.2);
+  }
+
+  .panel-placeholder .placeholder-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    opacity: 0.4;
+  }
+
+  .panel-placeholder .placeholder-desc {
+    font-size: 0.85rem;
+    color: var(--text-dim);
+    max-width: 300px;
+    text-align: center;
+    line-height: 1.5;
+  }
+
+  /* Responsive */
+  @media (max-width: 600px) {
+    .panels-container { padding: 50px 0 80px; }
+    .panel-text { padding: 1.5rem 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LANDING ===== -->
+<div id="landing">
+  <h1>RECLAIM</h1>
+  <p class="tagline">"They kept telling me I wasn't the right type. I kept proving there's no such thing."</p>
+
+  <div class="episode-grid">
+    <button class="episode-btn" onclick="loadEpisode(1)">
+      <span class="ep-num">01</span>
+      <div class="ep-info">
+        <h3>The Board</h3>
+        <p>The Iron Ward. Chess. The first spark.</p>
+      </div>
+    </button>
+
+    <button class="episode-btn" onclick="loadEpisode(2)">
+      <span class="ep-num">02</span>
+      <div class="ep-info">
+        <h3>The Crossing</h3>
+        <p>Concrete to green. A new world.</p>
+      </div>
+    </button>
+
+    <button class="episode-btn" onclick="loadEpisode(3)">
+      <span class="ep-num">03</span>
+      <div class="ep-info">
+        <h3>Not Technical Enough</h3>
+        <p>The highest score. The closed door. The fire.</p>
+      </div>
+    </button>
+
+    <button class="episode-btn" onclick="loadEpisode(4)">
+      <span class="ep-num">04</span>
+      <div class="ep-info">
+        <h3>Iron Sharpens Iron</h3>
+        <p>The Verdant Reach. High school. The crew. The mat.</p>
+      </div>
+    </button>
+  </div>
+</div>
+
+<!-- ===== READER ===== -->
+<div id="reader">
+  <div class="reader-header" id="readerHeader">
+    <button class="back-btn" onclick="backToMenu()">Back</button>
+    <span class="reader-title" id="readerTitle">RECLAIM</span>
+    <span class="panel-counter" id="panelCounter"></span>
+  </div>
+  <div class="panels-container" id="panelsContainer"></div>
+  <div class="progress-bar" id="progressBar"></div>
+</div>
+
+<script>
+// ============================================================
+// EPISODE DATA
+// Each episode is an array of panel objects.
+// Types: "image", "text", "chapter-card", "splash", "end"
+//
+// TO ADD YOUR AI ART:
+// 1. Create a folder called "images" next to this HTML file
+// 2. Save your DALL-E images as: EP01-P01.png, EP01-P02.png, etc.
+// 3. Change the "src" field in the panel data below to match
+// 4. Panels with no image will show a placeholder with description
+// ============================================================
+
+const episodes = {
+  1: {
+    title: "The Board",
+    epigraph: '"In the Iron Ward, you learn to see the whole board before you make a move."',
+    panels: [
+      // CHAPTER CARD (auto-generated)
+      { type: "chapter-card" },
+
+      // SPLASH — The Iron Ward
+      { type: "splash", src: "images/EP01-P01.png",
+        desc: "Bird's eye view of the Iron Ward — dense concrete towers, narrow streets, morning gold light",
+        narration: "The Iron Ward. Built on concrete. Held together by something stronger." },
+
+      // Text — narration
+      { type: "text", bg: "warm-bg",
+        narration: "The outside world called it dangerous. They weren't wrong. But they weren't right either. Dangerous is just another word for <em>alive</em>." },
+
+      // The Ashvane apartment
+      { type: "image", src: "images/EP01-P02.png",
+        desc: "Inside a small but immaculate apartment — family photos, a woman cooking, warmth" },
+
+      // Great-Gran + Kai walking
+      { type: "image", src: "images/EP01-P03.png",
+        desc: "Great-Gran and 6-year-old Kai walking through the Iron Ward, hand in hand" },
+
+      // Dialogue — Great-Gran teaches
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Great-Gran", line: "You know what chess is?" },
+        { speaker: "Kai", line: "It's a game with kings and stuff." },
+        { speaker: "Great-Gran", line: "Mm. It's more than that. Chess is how you see the whole picture. Most people look at what's in front of them. Chess teaches you to see what's underneath. What's behind. What's coming." }
+      ]},
+
+      // SPLASH — The Board plaza
+      { type: "splash", src: "images/EP01-P04.png",
+        desc: "The Board — open chess plaza between four iron towers, old men playing, golden light like a cathedral",
+        narration: "" },
+
+      // First chess game
+      { type: "image", src: "images/EP01-P05.png",
+        desc: "6-year-old Kai across the stone table from Mr. Barry, feet dangling, crowd gathering" },
+
+      // Dialogue — the game
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Mr. Barry", line: "That's a knight. Moves in an L. Most unpredictable piece on the board. Because it doesn't move in straight lines. Everything else goes forward, backward, diagonal. The knight jumps." },
+        { speaker: "Kai", line: "That's my piece." },
+        { speaker: "Mr. Barry", line: "Yeah? Show me." }
+      ]},
+
+      // SPLASH — Pulse awakening at the chess board
+      { type: "splash", src: "images/EP01-P06.png",
+        desc: "Chess pieces glowing gold — Pulse vision. Kai's eyes with gold rings. Only he can see it.",
+        narration: "" },
+
+      // Dialogue — Mr. Barry stunned
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Mr. Barry", line: "...Boy. Where did you learn that?" },
+        { speaker: "Kai", line: "Learn what? I just moved where it was brightest." }
+      ]},
+
+      // The boxing gym
+      { type: "image", src: "images/EP01-P07.png",
+        desc: "Basement gym — concrete walls, heavy bag. 7-year-old Kai faces Coach Reeves" },
+
+      // Dialogue — Coach Reeves
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Coach Reeves", line: "You're the chess kid." },
+        { speaker: "Kai", line: "Yes ma'am." },
+        { speaker: "Coach Reeves", line: "Chess won't help you when someone puts hands on you." },
+        { speaker: "Kai", line: "Mr. Barry says chess helps with everything." },
+        { speaker: "Coach Reeves", line: "Mr. Barry ever been in a fight?" },
+        { speaker: "Kai", line: "...He says he fights every day. Just with his brain." }
+      ]},
+
+      // Training montage
+      { type: "image", src: "images/EP01-P08.png",
+        desc: "Triple montage — jiu-jitsu on mats, heavy bag, chess with Mr. Barry" },
+
+      // Narration
+      { type: "text", bg: "warm-bg",
+        narration: "Chess taught my mind. The gym taught my body. I was learning two languages at once. Strategy and force. The mind and the body. I didn't know it then, but most people only speak one." },
+
+      // SPLASH — Great-Gran's revelation
+      { type: "splash", src: "images/EP01-P09.png",
+        desc: "Great-Gran holding Kai's face, fire in her eyes. Chess knight glowing gold on the floor between them.",
+        narration: "" },
+
+      // Dialogue — The sacred moment
+      { type: "text", bg: "dramatic", dialogue: [
+        { speaker: "Great-Gran", line: "Listen to me, Kai Ashvane. You see what's underneath. The world is going to try and tell you that isn't real. That you don't fit. That you're not the right kind of smart, or the right kind of strong, or the right kind of anything." },
+        { speaker: "", line: "" },
+        { speaker: "Great-Gran", line: "Don't you ever let them. You hear me? Not EVER." }
+      ]},
+
+      // Final narration
+      { type: "text", bg: "dark-bg",
+        narration: "I was seven years old when someone told me what I was. I've spent every day since proving her right." },
+
+      // END
+      { type: "end", nextEp: 2, nextTitle: "The Crossing" }
+    ]
+  },
+
+  2: {
+    title: "The Crossing",
+    epigraph: '"I thought the Iron Ward was the whole world. Then the world got bigger."',
+    panels: [
+      { type: "chapter-card" },
+
+      // Leaving
+      { type: "splash", src: "images/EP02-P01.png",
+        desc: "Moving van pulling away from the Iron Ward — Kai's hand pressed against the rear window",
+        narration: "I didn't know then that you carry where you're from in your bones. I thought I was leaving the Ward behind." },
+
+      // Mr. Barry farewell
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Mr. Barry", line: "You're not just Iron Ward. You're something else. You'll fit wherever you plant." },
+        { speaker: "Kai", line: "I'll come back." },
+        { speaker: "Mr. Barry", line: "I know you will. But don't rush. The Ward will be here. Go see what else there is." }
+      ]},
+
+      // Great-Gran farewell
+      { type: "text", bg: "dramatic", dialogue: [
+        { speaker: "Great-Gran", line: "You remember what I told you?" },
+        { speaker: "Kai", line: "I see what's underneath." },
+        { speaker: "Great-Gran", line: "And what else?" },
+        { speaker: "Kai", line: "...Don't let them tell me it isn't real." },
+        { speaker: "Great-Gran", line: "Go, baby. The world's bigger than these walls. Go see it." }
+      ]},
+
+      // SPLASH — Trees
+      { type: "splash", src: "images/EP02-P02.png",
+        desc: "Through a car window — vast forest, green to the horizon. Kai's wonder-struck face reflected in glass.",
+        narration: "I thought the Iron Ward was the whole world. Then I saw the trees. And I realized the world wasn't small — I was." },
+
+      // Pops conversation
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Kai", line: "Pops? Are the people nice here?" },
+        { speaker: "Pops", line: "Most of 'em. Yeah. Most of 'em are real nice." },
+        { speaker: "Kai", line: "What about the ones who aren't?" },
+        { speaker: "Pops", line: "...You'll know 'em when you see 'em. Same way you know anything — you pay attention. But Kai. Don't let the bad ones make you forget the good ones. There's more good. Always." }
+      ]},
+
+      // Stars
+      { type: "splash", src: "images/EP02-P03.png",
+        desc: "Kai at a window at night — sky full of stars, Milky Way visible. Chess knight glowing on nightstand.",
+        narration: "" },
+
+      // The cold moment
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Kai", line: "Moms? That lady... She didn't like us. But she doesn't even know us." },
+        { speaker: "Moms", line: "Some people decide what you are before you open your mouth. Their eyes are broken. Not yours." },
+        { speaker: "Moms", line: "I don't care what they say you are. I know what you are." }
+      ]},
+
+      // Meeting Greg and Alex
+      { type: "image", src: "images/EP02-P04.png",
+        desc: "School cafeteria — Kai, Greg, and Alex meeting for the first time. Greg energetic, Alex calm." },
+
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Greg", line: "You play any sports?" },
+        { speaker: "Kai", line: "Boxing. Jiu-jitsu." },
+        { speaker: "Greg", line: "For real? Like fighting?" },
+        { speaker: "Kai", line: "Like discipline." },
+        { speaker: "Alex", line: "I'm Alex. That's Greg. We play soccer." },
+        { speaker: "Kai", line: "I don't know anything about soccer." },
+        { speaker: "Greg", line: "We don't know anything about punching people. ...This could work." }
+      ]},
+
+      // Parallel training
+      { type: "image", src: "images/EP02-P05.png",
+        desc: "Split panel — Greg and Alex on soccer field / Kai alone at the heavy bag. Same fire, different disciplines." },
+
+      { type: "text", bg: "dark-bg",
+        narration: "They trained together. I trained alone. Different disciplines. Same fire. I didn't know it then, but I'd just met two people I'd carry with me for the rest of my life." },
+
+      // Final
+      { type: "text", bg: "warm-bg",
+        narration: "The Iron Ward taught me to read the board. The Verdant Reach was about to teach me that the board is bigger than I ever imagined. New territory. New rules. Same fire." },
+
+      { type: "end", nextEp: 3, nextTitle: "Not Technical Enough" }
+    ]
+  },
+
+  3: {
+    title: "Not Technical Enough",
+    epigraph: '"The first time they tell you what you\'re not, it cuts. Every time after that, it\'s fuel."',
+    panels: [
+      { type: "chapter-card" },
+
+      // Kai at 12
+      { type: "splash", src: "images/EP03-P01.png",
+        desc: "Kai at 12 — athletic, confident, chess knight pin on collar. Academy entrance behind him.",
+        narration: "Three years. The soft ground didn't stay soft. It became foundation." },
+
+      // Narration — training
+      { type: "text", bg: "dark-bg",
+        narration: "Chess taught my mind. The gym taught my body. Math taught me that both speak the same language — <em>patterns</em>. Greg was speed. Alex was strategy. I was both — plus something else I couldn't name yet." },
+
+      // Exam
+      { type: "image", src: "images/EP03-P02.png",
+        desc: "Kai writing rapidly in exam hall — calm while others stress. Faint gold shimmer in his eyes." },
+
+      // SPLASH — Pulse during exam
+      { type: "splash", src: "images/EP03-P03.png",
+        desc: "Dual reality — normal exam room above, Pulse vision below. Glowing gold web of connected problems.",
+        narration: "" },
+
+      // Scores posted
+      { type: "image", src: "images/EP03-P04.png",
+        desc: "Scoreboard — Greg and Alex pointing at the top. Kai is #1. Shock and pride on their faces." },
+
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Greg", line: "BRO. NUMBER ONE. YOU'RE NUMBER ONE!" },
+        { speaker: "Alex", line: "That's AG for sure. First pick." }
+      ]},
+
+      { type: "text", bg: "dark-bg",
+        narration: "I earned that. Every chess game, every round on the bag, every equation solved. That score was mine." },
+
+      // SPLASH — The office
+      { type: "splash", src: "images/EP03-P05.png",
+        desc: "The office — Dodd behind desk, Kai across. The moment of impact. His confidence cracking. The open folder showing #1 scores.",
+        narration: "" },
+
+      // THE dialogue
+      { type: "text", bg: "dramatic", dialogue: [
+        { speaker: "Dodd", line: "Your theoretical and strategic scores are outstanding. However... the AG track requires rigorous technical discipline within established frameworks." },
+        { speaker: "Kai", line: "I scored higher than everyone. On everything." },
+        { speaker: "Dodd", line: "Getting the right answer isn't always enough. The process matters." },
+        { speaker: "Kai", line: "I scored the HIGHEST. In the CLASS. What part of 'highest' isn't technical enough?" },
+        { speaker: "Dodd", line: "You're not quite technical enough." }
+      ]},
+
+      { type: "text", bg: "dark-bg",
+        narration: "Three words. They'll follow me for the rest of my life. Not as a wound. As <em>fuel</em>." },
+
+      // At the door
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Kai", line: "You're wrong." }
+      ]},
+
+      // SPLASH — Heavy bag rage
+      { type: "splash", src: "images/EP03-P06.png",
+        desc: "Kai HITTING the heavy bag — no wraps, knuckles bleeding, gold Pulse flare. Pure channeled fire.",
+        narration: "" },
+
+      // SPLASH — Eyes
+      { type: "image", src: "images/EP03-P07.png",
+        desc: "Extreme close-up — Kai's eyes. Gold rings blazing. Tear tracks but no more tears. Determination." },
+
+      // The shift
+      { type: "text", bg: "dramatic",
+        narration: "That was the first time someone put a wall in front of me and told me I couldn't pass. It wasn't the last. But here's the thing about walls. I don't go through them. I don't go around them. I go over them. And I make sure everyone sees me do it." },
+
+      // The three on the bench
+      { type: "image", src: "images/EP03-P08.png",
+        desc: "Three boys on a bench at sunset — gold light. Young warriors at the start of a long journey." },
+
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Greg", line: "So what do you do?" },
+        { speaker: "Kai", line: "I make the general track better than their AG." },
+        { speaker: "Alex", line: "How?" },
+        { speaker: "Kai", line: "By being in it." },
+        { speaker: "Alex", line: "For the record. You scored higher than both of us and we got in." },
+        { speaker: "Kai", line: "I know. Doesn't that make you\u2014" },
+        { speaker: "Alex", line: "\u2014" },
+        { speaker: "Kai", line: "It makes me better. Because now I have something to prove. You two just have a track." },
+        { speaker: "Greg", line: "We're with you. AG or not. Always." },
+        { speaker: "Alex", line: "Always." }
+      ]},
+
+      // FINAL — More Fire
+      { type: "splash", src: "images/EP03-P09.png",
+        desc: "Kai silhouetted in window at night. Stars outside. Chess knight glowing gold. Wrapped hands. Determination.",
+        narration: "" },
+
+      { type: "text", bg: "dark-bg",
+        narration: "Not technical enough. I heard it at twelve. I'd hear it again at twenty-two. And again after that. They kept telling me I wasn't the right type. I kept proving there's no such thing." },
+
+      { type: "end", nextEp: 4, nextTitle: "Iron Sharpens Iron" }
+    ]
+  },
+
+  4: {
+    title: "Iron Sharpens Iron",
+    epigraph: '"The Verdant Reach taught me to endure. The Ember Grill taught me that the right people make you believe impossible things."',
+    panels: [
+      { type: "chapter-card" },
+
+      // SPLASH — Time jump
+      { type: "splash", src: "images/EP04-P01.png",
+        desc: "Split image: 12-year-old Kai writing MORE FIRE vs 14-year-old Kai walking into high school gymnasium",
+        narration: "" },
+
+      // Narration — opening
+      { type: "text", bg: "warm-bg",
+        narration: "Fourteen. Two years past the first wall. The fire hadn't dimmed. It just needed somewhere new to burn." },
+
+      // Coach Wade intro
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Coach Wade", line: "Wrestling isn't a sport. It's a conversation between you and suffering. Some of you will understand that. Most of you won't." },
+        { speaker: "Kai", line: "There's nowhere to hide on that mat." }
+      ]},
+
+      // Kai taken down on the mat
+      { type: "image", src: "images/EP04-P02.png",
+        desc: "Kai being taken down hard on the wrestling mat by Devon, a bigger junior wrestler. Mat-level shot, raw intensity." },
+
+      // Wrestling lesson
+      { type: "text", bg: "dark-bg",
+        narration: "Wrestling taught me what they couldn't: that sometimes there's no technique. No shortcut. No pattern to exploit. Sometimes the only way forward is through suffering." },
+
+      // Devon dialogue
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Devon", line: "Not bad for a boxer. Most guys quit after the first ride." }
+      ]},
+
+      // Day one reflection
+      { type: "text", bg: "dark-bg",
+        narration: "I lost every round that first day. Didn't matter. I wasn't there to win. I was there to find out what I was made of." },
+
+      // SPLASH — The crew introduced
+      { type: "splash", src: "images/EP04-P03.png",
+        desc: "The full crew introduced: Jovante with glasses and economics books, Anthony sharp-dressed, Greg and Alex from soccer, Kai in the center with chess knight pendant",
+        narration: "" },
+
+      // The crew narration
+      { type: "text", bg: "warm-bg",
+        narration: "Five different lanes. One road. We didn't know it yet, but we were already building something." },
+
+      // Ember Grill interior
+      { type: "image", src: "images/EP04-P04.png",
+        desc: "The Ember Grill diner interior — five Black teenage boys crammed into a red vinyl booth, laughing, fries on the table, golden warm lighting" },
+
+      // Ember Grill dialogue
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Jovante", line: "If you put twenty marks a week into a growth ledger starting NOW, by the time we graduate\u2014" },
+        { speaker: "Greg", line: "Bro. We are fourteen. We don't have twenty marks." },
+        { speaker: "Anthony", line: "Presentation is everything. You walk into a room looking like you own it, people treat you like you own it. Before you say a word." }
+      ]},
+
+      // Ember Grill narration
+      { type: "text", bg: "warm-bg",
+        narration: "The Ember Grill. Red booths, bad lighting, the best conversations of our lives. We were fourteen and talking about taking over the world like it was a weekend project." },
+
+      // Mall walk
+      { type: "image", src: "images/EP04-P05.png",
+        desc: "Five Black teenage boys walking through an indoor mall like they own it \u2014 Anthony leading, Jovante analyzing prices, Kai observing, Greg and Alex trailing" },
+
+      // The Bazaar narration
+      { type: "text", bg: "dark-bg",
+        narration: "The Bazaar. Every Saturday. Five kids with five different visions, one shared certainty \u2014 we were going to be something. We just had to survive high school first." },
+
+      // Wrestling match
+      { type: "image", src: "images/EP04-P06.png",
+        desc: "Wrestling match \u2014 Kai executing an explosive pin reversal, eyes with subtle golden ring, referee sliding in, crowd blurred" },
+
+      // Kai on Greg and Alex
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Kai", line: "Alex sees the pass two moves before it opens. Greg doesn't see it at all \u2014 he just runs into the space like he KNOWS it'll be there. Trust. That's what that is." }
+      ]},
+
+      // Brotherhood narration
+      { type: "text", bg: "dark-bg",
+        narration: "Greg didn't understand wrestling. I didn't understand the offside rule. Jovante didn't understand why we kept getting hurt for free. Anthony didn't understand why we didn't dress better while doing it. None of that mattered. We showed up." },
+
+      // Kai's declaration
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Kai", line: "I don't know what I want to build yet. But I know I want to build it with people like you." }
+      ]},
+
+      // Time passage
+      { type: "text", bg: "warm-bg",
+        narration: "The Ember Grill. Three years. Same booth. Same crew. We were laughing about taking over the world \u2014 except by junior year, we'd stopped laughing. We'd started planning." },
+
+      // Mrs. Odom wake-up
+      { type: "text", bg: "dramatic", dialogue: [
+        { speaker: "Mrs. Odom", line: "A kid with your scores and a 3.0 \u2014 every admissions office will read that the same way. They'll see someone who doesn't try. And they won't care WHY." }
+      ]},
+
+      // Comfort trap
+      { type: "text", bg: "dark-bg",
+        narration: "Funny how I'm wired. Give me comfort and I coast. Put me in a corner and I become someone else." },
+
+      // Time wall
+      { type: "text", bg: "dark-bg",
+        narration: "The wall wasn't a person this time. It was time itself. And time doesn't negotiate." },
+
+      // Mr. Hale dialogue
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Mr. Hale", line: "Ashvane. What changed?" },
+        { speaker: "Kai", line: "Nothing changed. I just woke up." }
+      ]},
+
+      // Mat lesson
+      { type: "text", bg: "dark-bg", dialogue: [
+        { speaker: "Kai", line: "Get up. Nobody's coming to help you. That's the point." }
+      ]},
+
+      // Mat wisdom
+      { type: "text", bg: "dark-bg",
+        narration: "The mat taught me the most important lesson of high school: the only person who decides when you're done is you." },
+
+      // College apps
+      { type: "text", bg: "warm-bg",
+        narration: "I applied to the Duram Citadel the same way I stepped onto the wrestling mat freshman year. Not because I expected to win. Because I needed to know." },
+
+      // SPLASH — Denial letter
+      { type: "splash", src: "images/EP04-P07.png",
+        desc: "Close on the Duke denial letter. Key words visible: unable to offer admission... competitive applicant pool... DENIED.",
+        narration: "" },
+
+      // MORE FIRE
+      { type: "text", bg: "dramatic", dialogue: [
+        { speaker: "Kai", line: "MORE FIRE." }
+      ]},
+
+      // System narration
+      { type: "text", bg: "dark-bg",
+        narration: "The Duram Citadel. The same system that told me I wasn't technical enough at twelve told me I wasn't enough at seventeen. Different building. Same wall. But walls don't burn. I do." },
+
+      // Why go away
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Kai", line: "Because if I can make it there \u2014 where I don't know anybody, where nobody owes me anything, where I have to build from nothing \u2014 then I'll know it's real." },
+        { speaker: "Pops", line: "Don't talk about it. Be about it." }
+      ]},
+
+      // Farewell at the Ember Grill
+      { type: "image", src: "images/EP04-P08.png",
+        desc: "Five young men (18) at the Ember Grill booth one last time \u2014 senior year farewell, same booth, emotional, golden lighting" },
+
+      // Kai's farewell
+      { type: "text", bg: "warm-bg", dialogue: [
+        { speaker: "Kai", line: "This \u2014 us \u2014 the Ember Grill, the Bazaar, the bleachers, these four years \u2014 is the one thing in my life that nobody ever denied me. And nobody ever will." },
+        { speaker: "Alex", line: "We're with you. Wherever you go. Always." }
+      ]},
+
+      // Farewell selfie
+      { type: "image", src: "images/EP04-P09.png",
+        desc: "Five young men huddled for a selfie outside the Ember Grill at night, red neon sign glowing behind them, farewell photo" },
+
+      // SPLASH — Leaving
+      { type: "splash", src: "images/EP04-P10.png",
+        desc: "Car on the highway heading toward mountains. Verdant Reach fading behind. Ember Grill crew photo tucked in the visor. Denial letter face-down on the dashboard.",
+        narration: "" },
+
+      // Three wards reflection
+      { type: "text", bg: "warm-bg",
+        narration: "The Iron Ward taught me to see. The Verdant Reach taught me to endure. The Ember Grill taught me that the right people make you believe impossible things." },
+
+      // Final narration
+      { type: "text", bg: "dark-bg",
+        narration: "I left the Verdant Reach the same way I left the Ward \u2014 carrying everything I'd learned and heading toward everything I didn't know. But this time I carried something new: four brothers who said <em>always</em> and meant it." },
+
+      // More fire
+      { type: "text", bg: "dramatic",
+        narration: "More fire." },
+
+      { type: "end", nextEp: 5, nextTitle: "The Proving Ground" }
+    ]
+  }
+};
+
+// ============================================================
+// RENDERING ENGINE
+// ============================================================
+
+let currentEpisode = null;
+let headerTimeout = null;
+
+function loadEpisode(epNum) {
+  const ep = episodes[epNum];
+  if (!ep) return;
+  currentEpisode = epNum;
+
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('reader').style.display = 'block';
+  document.getElementById('readerTitle').textContent = `EP ${String(epNum).padStart(2,'0')} \u2014 ${ep.title}`;
+
+  const container = document.getElementById('panelsContainer');
+  container.innerHTML = '';
+
+  ep.panels.forEach((panel, i) => {
+    const el = createPanel(panel, epNum, i);
+    container.appendChild(el);
+  });
+
+  window.scrollTo(0, 0);
+  observePanels();
+  updateProgress();
+}
+
+function createPanel(panel, epNum, index) {
+  const div = document.createElement('div');
+  div.className = 'panel';
+  div.dataset.index = index;
+
+  switch (panel.type) {
+    case 'chapter-card': {
+      const ep = episodes[epNum];
+      div.innerHTML = `
+        <div class="chapter-card">
+          <div class="ep-number">Episode ${String(epNum).padStart(2, '0')}</div>
+          <h2>${ep.title}</h2>
+          <div class="epigraph">${ep.epigraph}</div>
+        </div>`;
+      break;
+    }
+
+    case 'splash': {
+      div.classList.add('panel-splash');
+      if (panel.src) {
+        const img = document.createElement('img');
+        img.src = panel.src;
+        img.alt = panel.desc;
+        img.onerror = function() {
+          this.replaceWith(makePlaceholder('SPLASH PAGE', panel.desc));
+        };
+        div.appendChild(img);
+        if (panel.narration) {
+          const overlay = document.createElement('div');
+          overlay.className = 'overlay-text';
+          overlay.innerHTML = `<p class="narration">${panel.narration}</p>`;
+          div.appendChild(overlay);
+        }
+      } else {
+        div.appendChild(makePlaceholder('SPLASH PAGE', panel.desc));
+      }
+      break;
+    }
+
+    case 'image': {
+      if (panel.src) {
+        const img = document.createElement('img');
+        img.src = panel.src;
+        img.alt = panel.desc;
+        img.onerror = function() {
+          this.replaceWith(makePlaceholder('PANEL', panel.desc));
+        };
+        div.appendChild(img);
+      } else {
+        div.appendChild(makePlaceholder('PANEL', panel.desc));
+      }
+      break;
+    }
+
+    case 'text': {
+      let content = '';
+      if (panel.narration) {
+        content = `<p class="narration">${panel.narration}</p>`;
+      }
+      if (panel.dialogue) {
+        content = '<div class="dialogue">';
+        panel.dialogue.forEach(d => {
+          if (d.speaker) content += `<div class="speaker">${d.speaker}</div>`;
+          if (d.line) content += `<div class="line">${d.line}</div>`;
+        });
+        content += '</div>';
+      }
+      div.innerHTML = `<div class="panel-text ${panel.bg || ''}">${content}</div>`;
+      break;
+    }
+
+    case 'end': {
+      div.innerHTML = `
+        <div class="end-card">
+          <h3>End of Episode ${currentEpisode}</h3>
+          ${panel.nextTitle ? `
+            <div class="next-title">Next: "${panel.nextTitle}"</div>
+            ${episodes[panel.nextEp] ? `<button class="next-ep-btn" onclick="loadEpisode(${panel.nextEp})">READ NEXT</button>` : `<button class="next-ep-btn" style="opacity:0.4;cursor:not-allowed" disabled>COMING SOON</button>`}
+          ` : ''}
+        </div>`;
+      break;
+    }
+  }
+
+  return div;
+}
+
+function makePlaceholder(label, desc) {
+  const el = document.createElement('div');
+  el.className = 'panel-placeholder';
+  el.innerHTML = `<div class="placeholder-label">${label}</div><div class="placeholder-desc">${desc}</div>`;
+  return el;
+}
+
+function backToMenu() {
+  document.getElementById('reader').style.display = 'none';
+  document.getElementById('landing').style.display = 'flex';
+  currentEpisode = null;
+}
+
+// Scroll reveal
+function observePanels() {
+  const panels = document.querySelectorAll('.panel');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+
+  panels.forEach(p => observer.observe(p));
+}
+
+// Progress bar
+function updateProgress() {
+  window.addEventListener('scroll', () => {
+    if (!currentEpisode) return;
+    const scrollTop = window.scrollY;
+    const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    const progress = Math.min((scrollTop / docHeight) * 100, 100);
+    document.getElementById('progressBar').style.width = progress + '%';
+
+    // Auto-hide header on scroll
+    clearTimeout(headerTimeout);
+    document.getElementById('readerHeader').classList.remove('hidden');
+    headerTimeout = setTimeout(() => {
+      if (scrollTop > 200) {
+        document.getElementById('readerHeader').classList.add('hidden');
+      }
+    }, 2000);
+  });
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && currentEpisode) backToMenu();
+});
+</script>
+
+</body>
+</html>
